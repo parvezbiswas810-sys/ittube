@@ -92,6 +92,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Adopts a token minted by the backend's browser sign-in flow.
+  Future<void> loginWithToken(String value) async {
+    loading = true;
+    notifyListeners();
+    try {
+      token = value;
+      api.client.token = value;
+      await _saveToken(value);
+      user = await api.me();
+    } catch (_) {
+      await _clearToken();
+      rethrow;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> refresh() async {
     if (!isAuthenticated) return;
     try {

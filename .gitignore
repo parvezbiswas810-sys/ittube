@@ -46,3 +46,7 @@ dist/site/*.zip
 # tooling
 .agent_tmp/
 .DS_Store
+
+# local-only secrets & embedded clones
+dist/KEYSTORE-INFO.txt
+Wifi-bill/

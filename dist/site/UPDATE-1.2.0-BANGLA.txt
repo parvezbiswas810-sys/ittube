@@ -1,0 +1,37 @@
+================================================================
+ IT TUBE v1.2.0 — PREMIUM UPDATE
+================================================================
+
+নতুন কী কী
+-----------
+• Login/Register সিস্টেম সরানো হয়েছে — এখন শুধু "Continue with Google"
+  (প্রথমবার Google দিয়ে ঢুকলেই অ্যাকাউন্ট তৈরি হয়ে যায়)
+• সম্পূর্ণ নতুন প্রিমিয়াম Login স্ক্রিন (orbit glow, gradient, animation)
+• Home সম্পূর্ণ নতুন ডিজাইন:
+    - greeting header + প্রিমিয়াম search bar
+    - বড় Featured hero কার্ড
+    - "Continue watching" রো (যেখানে থেমেছিলেন সেখান থেকে resume)
+• Bottom navigation এখন floating rounded bar + gradient glow upload বাটন
+• Video player-এ নতুন: ভিডিওর ডানে/বামে ডাবল-ট্যাপ করলে +10s / -10s seek
+• সব জায়গায় নতুন gradient / shadow / radius সিস্টেম (Blue Orbit)
+
+গুরুত্বপূর্ণ — ইনস্টল করার নিয়ম
+------------------------------
+এই APK নতুন release key দিয়ে সাইন করা (নিরাপত্তার জন্য)।
+তাই আগের অ্যাপটা আগে uninstall করুন, তারপর নতুনটা ইনস্টল করুন:
+
+  1) Settings → Apps → IT TUBE → Uninstall
+  2) নতুন app-release.apk ইনস্টল
+
+(আপনার ভিডিও/চ্যানেল/ডেটা সার্ভারে আছে — uninstall করলে কিছু হারাবে না,
+ আবার Google দিয়ে login করলেই সব ফিরে আসবে)
+
+ডাউনলোড
+--------
+APK : app-release.apk
+AAB : app-release.aab
+
+Google sign-in
+--------------
+আগের মতোই কাজ করবে (browser fallback সহ)। নতুন SHA-1:
+7A:1C:32:FB:3B:41:2F:10:19:2A:E4:59:7F:0F:DD:8D:C7:C1:E0:BB

@@ -1,9 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../core/theme.dart';
 import '../models/models.dart';
+import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import '../screens/channel/channel_screen.dart';
 import '../screens/video/video_player_screen.dart';
 
@@ -401,6 +404,192 @@ class ErrorState extends StatelessWidget {
       message: message,
       icon: Icons.cloud_off_rounded,
       action: FilledButton(onPressed: onRetry, style: FilledButton.styleFrom(minimumSize: const Size(150, 44)), child: const Text('Try again')),
+    );
+  }
+}
+
+
+/// Large editorial card used at the top of Home.
+class HeroVideoCard extends StatelessWidget {
+  final Video video;
+  const HeroVideoCard({super.key, required this.video});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => VideoPlayerScreen(video: video))),
+        child: Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(26), boxShadow: AppShadows.card),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(26),
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (video.thumbnailUrl != null && video.thumbnailUrl!.isNotEmpty)
+                    CachedNetworkImage(imageUrl: video.thumbnailUrl!, fit: BoxFit.cover)
+                  else
+                    Container(color: AppColors.light),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.transparent, Color(0xCC071B68)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.35, 1],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                          decoration: BoxDecoration(gradient: AppGradients.brand, borderRadius: BorderRadius.circular(8)),
+                          child: const Text('FEATURED', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                        ),
+                        const SizedBox(height: 9),
+                        Text(
+                          video.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, height: 1.25, letterSpacing: -0.3),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.play_circle_fill_rounded, size: 15, color: AppColors.sky),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                '${video.channel?.name ?? 'IT TUBE'} · ${formatCount(video.viewsCount)} views · ${video.durationText}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 11.5, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Resume list built from the user's watch history.
+class ContinueWatchingRow extends StatefulWidget {
+  const ContinueWatchingRow({super.key});
+
+  @override
+  State<ContinueWatchingRow> createState() => _ContinueWatchingRowState();
+}
+
+class _ContinueWatchingRowState extends State<ContinueWatchingRow> {
+  List<HistoryItem> _items = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    if (!context.read<AuthProvider>().isAuthenticated) return;
+    try {
+      final (items, _) = await context.read<ApiService>().history();
+      if (!mounted) return;
+      setState(() => _items = items.take(10).toList());
+    } catch (_) {
+      // A missing history is not an error worth surfacing on Home.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Continue watching', icon: Icons.history_rounded),
+        SizedBox(
+          height: 176,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: _items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final item = _items[i];
+              final progress = item.video.duration <= 0 ? 0.0 : (item.position / item.video.duration).clamp(0.0, 1.0);
+              return SizedBox(
+                width: 208,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => VideoPlayerScreen(video: item.video, startAt: Duration(seconds: item.position))),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (item.video.thumbnailUrl != null && item.video.thumbnailUrl!.isNotEmpty)
+                                CachedNetworkImage(imageUrl: item.video.thumbnailUrl!, fit: BoxFit.cover)
+                              else
+                                Container(color: AppColors.light),
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  minHeight: 3.5,
+                                  backgroundColor: Colors.black26,
+                                  valueColor: const AlwaysStoppedAnimation(AppColors.cyan),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.video.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.navy, height: 1.3),
+                      ),
+                      Text(
+                        item.video.channel?.name ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

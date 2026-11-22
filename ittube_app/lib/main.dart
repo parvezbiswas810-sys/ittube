@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api_client.dart';
+import 'core/route_observer.dart';
 import 'core/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/config_provider.dart';
@@ -44,6 +45,7 @@ class ItTubeApp extends StatelessWidget {
       title: 'IT TUBE',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      navigatorObservers: [appRouteObserver],
       home: const SplashScreen(),
     );
   }

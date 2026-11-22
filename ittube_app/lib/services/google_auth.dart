@@ -20,18 +20,37 @@ Future<String?> obtainGoogleIdToken({String? serverClientId}) async {
   return auth.idToken;
 }
 
+/// SHA-1 of the certificate this build was signed with, injected at build time
+/// with --dart-define=BUILD_SHA1=... so users can compare it with the Google
+/// Cloud console without running keytool.
+const buildSha1 = String.fromEnvironment('BUILD_SHA1');
+
 String describeGoogleError(Object error) {
+  final sha = buildSha1.isEmpty ? 'not embedded in this build' : buildSha1;
+
   if (error is PlatformException) {
+    final detail = (error.message ?? '').trim();
     switch (error.code) {
       case 'sign_in_failed':
       case '10':
-        return 'Google sign-in failed. Check that this build\'s SHA-1 fingerprint is registered in the Google Cloud console.';
+        return 'Google sign-in failed (code 10, developer error).\n'
+            'Register this SHA-1 for package com.nexdicodelab.ittube in the same '
+            'Google Cloud project as the Web client ID:\n$sha\n'
+            'Also check that the admin panel holds the Web application client ID, '
+            'not the Android one.${detail.isEmpty ? '' : '\n($detail)'}';
+      case '12500':
+        return 'Google sign-in failed (code 12500). Google Play services are missing '
+            'or out of date on this device — use a real phone or a Play-enabled emulator.';
+      case '12501':
+        return 'Google sign-in was cancelled.';
+      case '12502':
+        return 'Another Google sign-in is already in progress. Wait a moment and retry.';
       case 'network_error':
-        return 'Network error while contacting Google. Try again.';
+        return 'Network error while contacting Google. Check the connection and retry.';
       case 'sign_in_canceled':
         return 'Google sign-in was cancelled.';
     }
-    return error.message ?? 'Google sign-in failed (${error.code}).';
+    return 'Google sign-in failed [${error.code}].${detail.isEmpty ? '' : '\n$detail'}';
   }
   return 'Google sign-in is not available on this device.';
 }

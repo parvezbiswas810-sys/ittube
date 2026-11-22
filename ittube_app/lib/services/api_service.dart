@@ -104,6 +104,13 @@ class ApiService {
       client.get('search', query: {'q': query, 'filter': filter, 'page': page});
 
   // ---------------- Categories & channels ----------------
+  Future<List<LiveStream>> liveStreams() async {
+    final json = await client.get('live-streams');
+    final data = json['data'];
+    final raw = data is Map<String, dynamic> ? (data['streams'] as List? ?? const []) : (data as List? ?? const []);
+    return raw.map((e) => LiveStream.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<List<Category>> categories() async {
     final json = await client.get('categories');
     return (json['data'] as List? ?? []).whereType<Map<String, dynamic>>().map(Category.fromJson).toList();

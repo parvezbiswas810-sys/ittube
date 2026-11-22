@@ -1,3 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
@@ -98,12 +101,15 @@ class ShortPlayer extends StatefulWidget {
   State<ShortPlayer> createState() => _ShortPlayerState();
 }
 
-class _ShortPlayerState extends State<ShortPlayer> {
+class _ShortPlayerState extends State<ShortPlayer> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   bool _ready = false;
   bool _liked = false;
   bool _subscribed = false;
+  bool _resumeOnForeground = false;
   int _likes = 0;
+  bool _lastPlaying = true;
+  DateTime _lastTick = DateTime.now();
 
   @override
   void initState() {
@@ -111,7 +117,24 @@ class _ShortPlayerState extends State<ShortPlayer> {
     _liked = widget.video.myReaction == 'like';
     _likes = widget.video.likesCount;
     _subscribed = widget.video.channel?.isSubscribed ?? false;
+    WidgetsBinding.instance.addObserver(this);
     _init();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
+      if (controller.value.isPlaying) {
+        _resumeOnForeground = true;
+        controller.pause();
+      }
+    } else if (state == AppLifecycleState.resumed && _resumeOnForeground) {
+      _resumeOnForeground = false;
+      if (widget.active) controller.play();
+    }
   }
 
   Future<void> _init() async {
@@ -122,13 +145,17 @@ class _ShortPlayerState extends State<ShortPlayer> {
     try {
       await controller.initialize();
       await controller.setLooping(true);
-      if (widget.active && mounted) {
+      if (!mounted) return;
+      setState(() => _ready = true);
+
+      // Render the first frame before audio starts.
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      if (!mounted) return;
+      if (widget.active) {
         await controller.play();
-        if (mounted) setState(() => _ready = true);
+        context.read<ApiService>().recordView(widget.video.id).catchError((_) => <String, dynamic>{});
       }
-      controller.addListener(() {
-        if (mounted) setState(() {});
-      });
+      controller.addListener(_onTick);
     } catch (_) {
       if (mounted) setState(() => _ready = false);
     }
@@ -140,16 +167,33 @@ class _ShortPlayerState extends State<ShortPlayer> {
     if (oldWidget.active != widget.active && _controller != null) {
       if (widget.active) {
         _controller!.play();
+        WakelockPlus.enable();
         context.read<ApiService>().recordView(widget.video.id).catchError((_) => <String, dynamic>{});
       } else {
         _controller!.pause();
         _controller!.seekTo(Duration.zero);
+        WakelockPlus.disable();
       }
+    }
+  }
+
+  void _onTick() {
+    final controller = _controller;
+    if (controller == null || !mounted) return;
+    final now = DateTime.now();
+    final playing = controller.value.isPlaying;
+    if (_lastPlaying != playing || now.difference(_lastTick).inMilliseconds >= 500) {
+      _lastTick = now;
+      _lastPlaying = playing;
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
+    if (widget.active) WakelockPlus.disable();
+    WidgetsBinding.instance.removeObserver(this);
+    _controller?.removeListener(_onTick);
     _controller?.dispose();
     super.dispose();
   }
@@ -211,8 +255,8 @@ class _ShortPlayerState extends State<ShortPlayer> {
               : Container(
                   color: Colors.black,
                   child: Center(
-                    child: widget.video.thumbnailUrl != null
-                        ? Image.network(widget.video.thumbnailUrl!, fit: BoxFit.cover)
+                    child: widget.video.thumbnailUrl != null && widget.video.thumbnailUrl!.isNotEmpty
+                        ? CachedNetworkImage(imageUrl: widget.video.thumbnailUrl!, fit: BoxFit.cover)
                         : const Icon(Icons.play_circle_outline_rounded, color: Colors.white54, size: 60),
                   ),
                 ),
@@ -293,8 +337,16 @@ class _ShortPlayerState extends State<ShortPlayer> {
                 );
               }),
               const SizedBox(height: 18),
-              _action(Icons.share_rounded, 'Share', Colors.white, () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share link: ${widget.video.playbackUrl ?? ''}')));
+              _action(Icons.share_rounded, 'Share', Colors.white, () async {
+                final link = widget.video.playbackUrl ?? '';
+                if (link.isEmpty) return;
+                try {
+                  await SharePlus.instance.share(ShareParams(text: '${widget.video.title}\n$link', subject: widget.video.title));
+                } catch (_) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to open the share sheet.')));
+                  }
+                }
               }),
             ],
           ),

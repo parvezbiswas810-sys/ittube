@@ -14,8 +14,48 @@ class AppColors {
   static const text = Color(0xFF14213D);
   static const muted = Color(0xFF64748B);
   static const border = Color(0xFFE3EAF5);
+  static const violet = Color(0xFF6C4BF6);
+  static const deepPurple = Color(0xFF4B2ED1);
+  static const lavender = Color(0xFFF3EFFF);
+  static const lavenderSoft = Color(0xFFF9F6FF);
   static const success = Color(0xFF0EA472);
   static const danger = Color(0xFFEF4444);
+}
+
+class AppGradients {
+  static const brand = LinearGradient(
+    colors: [AppColors.primary, AppColors.cyan],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const deep = LinearGradient(
+    colors: [AppColors.orbit, AppColors.navy, AppColors.primary],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const violetBrand = LinearGradient(
+    colors: [AppColors.primary, AppColors.violet],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const aurora = LinearGradient(
+    colors: [Color(0xFFE6F2FF), AppColors.ice, Colors.white],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+}
+
+class AppShadows {
+  static const List<BoxShadow> card = [
+    BoxShadow(color: Color(0x14071B68), blurRadius: 26, offset: Offset(0, 12)),
+  ];
+
+  static const List<BoxShadow> glow = [
+    BoxShadow(color: Color(0x330866F5), blurRadius: 30, offset: Offset(0, 14)),
+  ];
 }
 
 class AppTheme {
@@ -63,7 +103,8 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
@@ -79,10 +120,16 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: AppColors.primary, textStyle: const TextStyle(fontWeight: FontWeight.w700)),
       ),
+      cardTheme: const CardThemeData(
+        color: Colors.white,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+      ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         indicatorColor: AppColors.light,
-        height: 68,
+        height: 66,
         elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(

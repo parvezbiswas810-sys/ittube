@@ -14,7 +14,8 @@ import '../../widgets/widgets.dart';
 import '../channel/create_channel_screen.dart';
 
 class UploadScreen extends StatefulWidget {
-  const UploadScreen({super.key});
+  final String initialType;
+  const UploadScreen({super.key, this.initialType = 'video'});
 
   @override
   State<UploadScreen> createState() => _UploadScreenState();
@@ -28,7 +29,7 @@ class _UploadScreenState extends State<UploadScreen> {
   File? _thumbnail;
   int? _categoryId;
   String _visibility = 'public';
-  String _type = 'video';
+  late String _type = widget.initialType;
   List<Category> _categories = [];
   bool _uploading = false;
   double _progress = 0;

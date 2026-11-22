@@ -1,0 +1,124 @@
+================================================================
+ IT TUBE — GOOGLE LOGIN SETUP (Google Cloud Console) — বাংলা গাইড
+ Nexdi Code Lab · Blue Orbit Edition
+================================================================
+
+আপনার project number: 385840133471
+(Admin → Authentication এ যে Web client ID আছে সেটা এই project-এর)
+
+------------------------------------------------------------------------
+ধাপ ১ — সঠিক project খুলুন
+------------------------------------------------------------------------
+1. https://console.cloud.google.com এ যান
+2. উপরের বারে project selector → "385840133471" নাম্বার দেখে সেই project টা সিলেক্ট করুন
+   ⚠️ অন্য project-এ client বানালে অ্যাপে code 10 error আসবে
+
+------------------------------------------------------------------------
+ধাপ ২ — OAuth consent screen (নতুন নাম: Google Auth Platform)
+------------------------------------------------------------------------
+মেনু: APIs & Services → OAuth consent screen
+(নতুন console-এ: Google Auth Platform → Overview → Get started)
+
+a) Branding
+   - App name        : IT TUBE
+   - User support email : আপনার ইমেইল
+   - App logo        : (ঐচ্ছিক, 120x120 png)
+   - Authorized domains : adsxuit.com
+   - Developer contact : আপনার ইমেইল
+b) Audience
+   - User type : External
+c) Contact information → ইমেইল
+d) Finish / Create
+
+ঐচ্ছিক কিন্তু গুরুত্বপূর্ণ:
+   - App "Testing" অবস্থায় থাকলে শুধু Test users লগইন করতে পারে।
+     → Audience → Test users → Add users → যে Gmail দিয়ে টেস্ট করবেন সেটা যোগ করুন
+   - সবাই ব্যবহার করবে → "Publish app" চাপুন
+     (এর জন্য Privacy Policy URL আর Terms URL দিতে হবে, যেমন
+      https://api.adsxuit.com/privacy , https://api.adsxuit.com/terms)
+
+Scopes: শুধু openid, email, profile — এগুলো non-sensitive, আলাদা verification লাগে না।
+
+------------------------------------------------------------------------
+ধাপ ৩ — WEB client (এটাই admin panel-এ বসবে)
+------------------------------------------------------------------------
+APIs & Services → Credentials → + Create credentials → OAuth client ID
+
+  Application type : Web application
+  Name             : IT TUBE Web (server)
+
+  Authorized JavaScript origins : (খালি রাখুন)
+  Authorized redirect URIs      : https://api.adsxuit.com/auth/google/callback
+
+  → Create → "Client ID" কপি করুন
+    (দেখতে হবে: 385840133471-xxxxxxxx.apps.googleusercontent.com)
+
+এই ID টাই অ্যাপ "serverClientId" হিসেবে ব্যবহার করে, তাই token-এর audience মেলে।
+Client secret এই flow-এ লাগে না — কোথাও বসাতে হবে না।
+
+------------------------------------------------------------------------
+ধাপ ৪ — ANDROID client (SHA-1 যাচাই)
+------------------------------------------------------------------------
+আবার + Create credentials → OAuth client ID
+
+  Application type : Android
+  Name             : IT TUBE Android
+  Package name     : com.nexdicodelab.ittube
+  SHA-1            : E2:15:53:D3:9C:DC:CE:BC:C5:B5:D7:B0:81:E8:97:76:E4:EC:9A:D1
+
+  → Create
+
+(Play Store-এ upload করার পর Google Play App Signing-এর SHA-1 ও এখানে যোগ করতে হবে —
+ Play Console → Setup → App signing → "App signing key certificate" এর SHA-1)
+
+নিজে Android Studio দিয়ে build করলে SHA-1 বের করুন:
+  cd ittube_app/android && ./gradlew signingReport
+  → Variant: debug এর নিচের SHA1 লাইনটা ব্যবহার করুন
+
+একই Android client-এ একাধিক SHA-1 যোগ করা যায় (debug + release + Play)।
+
+------------------------------------------------------------------------
+ধাপ ৫ — Admin panel-এ বসান
+------------------------------------------------------------------------
+https://api.adsxuit.com/admin/authentication
+
+1. "Web OAuth Client ID" ঘরে ধাপ ৩-এর ID paste করুন
+2. (ঐচ্ছিক) "Android OAuth Client ID" ঘরে ধাপ ৪-এর ID
+3. Save settings
+4. Test configuration → সব OK হলে
+5. "Enable Google login" চাপুন (বা checkbox টিক দিয়ে Save)
+
+তারপর অ্যাপ বন্ধ করে খুলুন → Login স্ক্রিনে "Continue with Google" আসবে।
+APK rebuild লাগবে না — অ্যাপ /api/v1/app/config থেকে সেটিং নেয়।
+
+------------------------------------------------------------------------
+ধাপ ৬ — যাচাই
+------------------------------------------------------------------------
+ব্রাউজারে: https://api.adsxuit.com/api/v1/app/config
+  "google_login_enabled": true
+  "google_client_id": "385840133471-....apps.googleusercontent.com"
+
+অ্যাপে Google চাপার পর সমস্যা হলে মেসেজে code দেখাবে:
+  code 10     → SHA-1 / package / project mismatch, অথবা admin-এ Android client ID বসানো
+  12500       → Play Services নেই (emulator) — আসল ফোনে টেস্ট করুন
+  12501       → ব্যবহারকারী cancel করেছে
+  12502       → আগের sign-in চলছে
+  403 access_denied → consent screen-এ Test user যোগ করা নেই
+
+নতুন client বানানোর পর ৫–২০ মিনিট propagation সময় লাগতে পারে।
+দ্রুত টেস্ট: ফোনে Settings → Apps → IT TUBE → Storage → Clear data
+
+------------------------------------------------------------------------
+সাধারণ ভুল
+------------------------------------------------------------------------
+✗ Android client ID admin-এ বসানো (Web client ID বসাতে হবে)
+✗ Android client অন্য project-এ বানানো
+✗ SHA-1 টাইপো / কপি না হয়ে যাওয়া (কোলন সহ, ২০ জোড়া হেক্স)
+✗ consent screen-এ support email না দেওয়া
+✗ "Testing" mode-এ নিজের Gmail test user হিসেবে যোগ না করা
+
+------------------------------------------------------------------------
+এই প্রজেক্টে redirect URI দরকার?
+------------------------------------------------------------------------
+না। অ্যাপ Google থেকে ID token নেয়, সার্ভার সেটা verify করে।
+তবু Web client ফর্মে redirect URI লাগলে উপরের টা দিয়ে দিন — ব্যবহার হয় না।

@@ -20,11 +20,17 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\VideoController as AdminVideoController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\Web\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect('/admin'));
 Route::get('/terms', fn () => view('legal.terms'))->name('legal.terms');
 Route::get('/privacy', fn () => view('legal.privacy'))->name('legal.privacy');
+
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+});
 
 Route::get('/media/videos/{video}/stream', [MediaController::class, 'video'])->name('media.video');
 Route::get('/media/{path}', [MediaController::class, 'file'])->where('path', '.*')->name('media.file');

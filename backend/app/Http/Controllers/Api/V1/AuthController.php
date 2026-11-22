@@ -110,115 +110,29 @@ class AuthController extends Controller
 
     public function google(Request $request)
     {
-        if (! SettingService::bool('google_login_enabled')) {
-            return ApiResponse::error('Google sign-in is currently disabled.', [], 403);
-        }
-
         $data = $request->validate([
             'id_token' => ['required', 'string', 'min:50', 'max:4096'],
             'device_name' => ['nullable', 'string', 'max:60'],
         ]);
 
-        $verified = \App\Services\GoogleTokenVerifier::verify($data['id_token']);
+        $result = app(\App\Services\GoogleSignInService::class)
+            ->signIn($data['id_token'], $request->ip(), $data['device_name'] ?? 'android-app');
 
-        if (! $verified['ok']) {
-            return ApiResponse::error($verified['error'] ?? 'Google sign-in failed.', ['id_token' => [$verified['error'] ?? 'Invalid token.']], 401);
+        if (! $result['ok']) {
+            $errors = isset($result['field']) ? [$result['field'] => [$result['error']]] : [];
+
+            return ApiResponse::error($result['error'], $errors, $result['status'] ?? 400);
         }
 
-        $claims = $verified['claims'];
-        $googleId = (string) ($claims['sub'] ?? '');
-        $email = strtolower((string) ($claims['email'] ?? ''));
-
-        if ($googleId === '' || $email === '') {
-            return ApiResponse::error('Google did not return a usable identity.', [], 401);
-        }
-
-        if (isset($claims['email_verified']) && ! filter_var($claims['email_verified'], FILTER_VALIDATE_BOOLEAN)) {
-            return ApiResponse::error('Your Google email address is not verified.', [], 403);
-        }
-
-        $user = User::where('google_id', $googleId)->first() ?? User::where('email', $email)->first();
-
-        if ($user && $user->google_id && $user->google_id !== $googleId) {
-            return ApiResponse::error('This email is already linked to a different Google account.', [], 409);
-        }
-
-        if ($user && $user->status === 'banned') {
-            return ApiResponse::error('This account has been banned.', [], 403);
-        }
-
-        if ($user && $user->status === 'suspended') {
-            return ApiResponse::error('This account is suspended. '.($user->suspension_reason ?? ''), [], 403);
-        }
-
-        $user = DB::transaction(function () use ($user, $googleId, $email, $claims, $request) {
-            if (! $user) {
-                $username = $this->uniqueUsernameFromEmail($email);
-                $user = User::create([
-                    'username' => $username,
-                    'email' => $email,
-                    'google_id' => $googleId,
-                    'google_avatar' => $claims['picture'] ?? null,
-                    'auth_provider' => 'google',
-                    'password' => null,
-                    'role' => 'user',
-                    'status' => 'active',
-                    'email_verified_at' => now(),
-                ]);
-
-                UserProfile::create([
-                    'user_id' => $user->id,
-                    'display_name' => $claims['name'] ?? $username,
-                    'avatar' => null,
-                ]);
-
-                NotificationPreference::create(['user_id' => $user->id]);
-            } else {
-                $user->forceFill([
-                    'google_id' => $googleId,
-                    'google_avatar' => $claims['picture'] ?? $user->google_avatar,
-                    'email_verified_at' => $user->email_verified_at ?? now(),
-                    'last_login_at' => now(),
-                    'last_login_ip' => $request->ip(),
-                ])->save();
-
-                if (! $user->profile) {
-                    UserProfile::create([
-                        'user_id' => $user->id,
-                        'display_name' => $claims['name'] ?? $user->username,
-                    ]);
-                }
-            }
-
-            $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
-
-            return $user;
-        });
-
-        $token = $user->createToken($data['device_name'] ?? 'android-app')->plainTextToken;
+        $user = $result['user'];
         $user->load(['profile', 'channel']);
 
         return ApiResponse::success([
             'user' => new UserResource($user),
-            'token' => $token,
+            'token' => $result['token'],
             'token_type' => 'Bearer',
-            'is_new_user' => $user->wasRecentlyCreated,
+            'is_new_user' => (bool) $result['is_new'],
         ], 'Signed in with Google.');
-    }
-
-    protected function uniqueUsernameFromEmail(string $email): string
-    {
-        $base = preg_replace('/[^A-Za-z0-9_.]/', '', strstr($email, '@', true) ?: 'user') ?: 'user';
-        $base = substr($base, 0, 24);
-        $candidate = $base;
-        $i = 1;
-
-        while (User::withTrashed()->where('username', $candidate)->exists()) {
-            $candidate = $base.$i;
-            $i++;
-        }
-
-        return $candidate;
     }
 
     public function logout(Request $request)

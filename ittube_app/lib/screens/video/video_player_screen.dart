@@ -1,12 +1,17 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/api_client.dart';
+import '../../core/route_observer.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
@@ -19,28 +24,88 @@ import 'comments_sheet.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final Video video;
-  const VideoPlayerScreen({super.key, required this.video});
+  final Duration? startAt;
+  const VideoPlayerScreen({super.key, required this.video, this.startAt});
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, RouteAware {
   late Video _video = widget.video;
   VideoPlayerController? _controller;
+  late final ApiService _api;
+  Timer? _progressTimer;
+  Timer? _controlsTimer;
   bool _ready = false;
+  bool _showPoster = true;
   bool _controls = true;
+  bool _autoNext = true;
+  bool _completed = false;
+  bool _resumeOnForeground = false;
+  bool _resumeAfterRoute = false;
+  bool _lastPlaying = true;
+  bool _lastBuffering = false;
+  DateTime _lastTick = DateTime.now();
+  String? _seekHint;
+  double? _seekTapX;
   bool _fullscreen = false;
   bool _subscribed = false;
   List<Video> _related = [];
   String? _error;
 
+  bool get _isVisible => ModalRoute.of(context)?.isCurrent ?? true;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _api = context.read<ApiService>();
     _subscribed = _video.channel?.isSubscribed ?? false;
     _init();
     _loadRelated();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
+      if (controller.value.isPlaying) {
+        _resumeOnForeground = true;
+        controller.pause();
+        _saveProgress();
+      }
+    } else if (state == AppLifecycleState.resumed && _resumeOnForeground) {
+      _resumeOnForeground = false;
+      if (_isVisible) controller.play();
+    }
+  }
+
+  @override
+  void didPushNext() {
+    final controller = _controller;
+    if (controller != null && controller.value.isPlaying) {
+      _resumeAfterRoute = true;
+      controller.pause();
+    }
+  }
+
+  @override
+  void didPopNext() {
+    final controller = _controller;
+    if (controller != null && _resumeAfterRoute) {
+      _resumeAfterRoute = false;
+      controller.play();
+    }
   }
 
   Future<void> _init() async {
@@ -49,20 +114,99 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       setState(() => _error = 'This video has no playable file.');
       return;
     }
+
     final controller = VideoPlayerController.networkUrl(Uri.parse(url));
     _controller = controller;
+
     try {
       await controller.initialize();
-      await controller.play();
       if (!mounted) return;
+
+      final startAt = widget.startAt;
+      if (startAt != null && startAt > Duration.zero && startAt < controller.value.duration) {
+        await controller.seekTo(startAt);
+      }
+
+      controller.addListener(_onTick);
       setState(() => _ready = true);
-      controller.addListener(() {
-        if (mounted) setState(() {});
-      });
-      context.read<ApiService>().recordView(_video.id).catchError((_) => <String, dynamic>{});
+
+      // Let the first frame render before audio starts so playback never
+      // begins behind the loading poster.
+      await Future<void>.delayed(const Duration(milliseconds: 160));
+      if (!mounted || !_isVisible) return;
+
+      await controller.play();
+      WakelockPlus.enable();
+      _startProgressTimer();
+      _startControlsTimer();
+      _api.recordView(_video.id).catchError((_) => <String, dynamic>{});
     } catch (e) {
       if (mounted) setState(() => _error = 'Unable to play this video. Please try again.');
     }
+  }
+
+  void _onTick() {
+    final controller = _controller;
+    if (controller == null || !mounted) return;
+    final value = controller.value;
+
+    if (_showPoster && value.position > const Duration(milliseconds: 150)) {
+      setState(() => _showPoster = false);
+    }
+
+    if (!_completed && value.isInitialized && value.duration > Duration.zero && value.position >= value.duration - const Duration(milliseconds: 600)) {
+      _handleCompleted();
+      return;
+    }
+
+    // The platform reports progress many times per second; rebuild at most
+    // twice per second unless the play/buffer state actually changed.
+    final now = DateTime.now();
+    final stateChanged = _lastPlaying != value.isPlaying || _lastBuffering != value.isBuffering;
+    if (stateChanged || now.difference(_lastTick).inMilliseconds >= 500) {
+      _lastTick = now;
+      _lastPlaying = value.isPlaying;
+      _lastBuffering = value.isBuffering;
+      setState(() {});
+    }
+  }
+
+  Future<void> _handleCompleted() async {
+    if (_completed) return;
+    _completed = true;
+    _saveProgress(completed: true);
+
+    if (!_autoNext || _related.isEmpty || !mounted) return;
+    final next = _related.first;
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => VideoPlayerScreen(video: next)));
+  }
+
+  void _startProgressTimer() {
+    _progressTimer?.cancel();
+    _progressTimer = Timer.periodic(const Duration(seconds: 10), (_) => _saveProgress());
+  }
+
+  void _saveProgress({bool completed = false}) {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    final seconds = controller.value.position.inSeconds;
+    if (seconds < 3 && !completed) return;
+    _api.recordView(_video.id, position: seconds, completed: completed).catchError((_) => <String, dynamic>{});
+  }
+
+  void _startControlsTimer() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && (_controller?.value.isPlaying ?? false)) setState(() => _controls = false);
+    });
+  }
+
+  void _toggleControls() {
+    final show = !_controls;
+    setState(() => _controls = show);
+    if (show) _startControlsTimer();
   }
 
   Future<void> _loadRelated() async {
@@ -74,6 +218,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
+    _saveProgress();
+    _progressTimer?.cancel();
+    _controlsTimer?.cancel();
+    appRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
+    _controller?.removeListener(_onTick);
     _controller?.dispose();
     if (_fullscreen) {
       SystemChrome.setPreferredOrientations(DeviceOrientation.values);
@@ -161,10 +312,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  void _share() {
+  Future<void> _share() async {
     final link = _video.playbackUrl ?? '';
-    Clipboard.setData(ClipboardData(text: link));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video link copied to clipboard.')));
+    if (link.isEmpty) return;
+    try {
+      await SharePlus.instance.share(ShareParams(text: '${_video.title}\n$link', subject: _video.title));
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: link));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video link copied to clipboard.')));
+      }
+    }
   }
 
   Future<void> _saveToPlaylist() async {
@@ -437,7 +595,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
           ),
           if (_related.isNotEmpty) ...[
-            const SectionHeader(title: 'Up next', icon: Icons.playlist_play_rounded),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 10, 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.playlist_play_rounded, size: 20, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Up next', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.navy)),
+                  ),
+                  const Text('Autoplay', style: TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
+                  Switch.adaptive(
+                    value: _autoNext,
+                    activeColor: AppColors.primary,
+                    onChanged: (v) => setState(() => _autoNext = v),
+                  ),
+                ],
+              ),
+            ),
             ..._related.map((v) => VideoCard(video: v, compact: true)),
           ],
           const SizedBox(height: 20),
@@ -452,7 +627,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         aspectRatio: 16 / 9,
         child: Container(
           color: Colors.black,
-          child: Center(child: Text(_error!, style: const TextStyle(color: Colors.white70, fontSize: 12.5))),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white54, size: 30),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _error = null;
+                      _ready = false;
+                      _showPoster = true;
+                    });
+                    _init();
+                  },
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -465,8 +666,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (_video.thumbnailUrl != null) Image.network(_video.thumbnailUrl!, fit: BoxFit.cover),
-              const Center(child: CircularProgressIndicator(color: Colors.white)),
+              if (_video.thumbnailUrl != null && _video.thumbnailUrl!.isNotEmpty)
+                CachedNetworkImage(imageUrl: _video.thumbnailUrl!, fit: BoxFit.cover)
+              else
+                const ColoredBox(color: Colors.black),
+              const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.4)),
             ],
           ),
         ),
@@ -477,11 +681,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return AspectRatio(
       aspectRatio: controller.value.aspectRatio == 0 ? 16 / 9 : controller.value.aspectRatio,
       child: GestureDetector(
-        onTap: () => setState(() => _controls = !_controls),
+        onTap: _toggleControls,
+        onDoubleTapDown: (details) => _seekTapX = details.localPosition.dx,
+        onDoubleTap: () => _doubleTapSeek(context),
         child: Stack(
           fit: StackFit.expand,
           children: [
             Center(child: VideoPlayer(controller)),
+            if (_showPoster && _video.thumbnailUrl != null && _video.thumbnailUrl!.isNotEmpty)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CachedNetworkImage(imageUrl: _video.thumbnailUrl!, fit: BoxFit.cover),
+                ),
+              ),
+            if (controller.value.isBuffering)
+              const Center(child: SizedBox(width: 34, height: 34, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.6))),
+            if (_seekHint != null)
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.62), borderRadius: BorderRadius.circular(14)),
+                  child: Text(_seekHint!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                ),
+              ),
             if (_controls)
               Positioned.fill(
                 child: Container(
@@ -492,7 +715,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         child: IconButton(
                           iconSize: 58,
                           onPressed: () {
-                            controller.value.isPlaying ? controller.pause() : controller.play();
+                            if (controller.value.isPlaying) {
+                              controller.pause();
+                              WakelockPlus.disable();
+                              _saveProgress();
+                              _controlsTimer?.cancel();
+                            } else {
+                              controller.play();
+                              WakelockPlus.enable();
+                              _startControlsTimer();
+                            }
                             setState(() {});
                           },
                           icon: Icon(
@@ -538,6 +770,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
       ),
     );
+  }
+
+  void _doubleTapSeek(BuildContext context) {
+    final controller = _controller;
+    if (controller == null) return;
+
+    final width = context.size?.width ?? MediaQuery.of(context).size.width;
+    final forward = (_seekTapX ?? width) > width / 2;
+    final duration = controller.value.duration;
+    final target = controller.value.position + Duration(seconds: forward ? 10 : -10);
+    final clamped = target < Duration.zero ? Duration.zero : (target > duration ? duration : target);
+
+    controller.seekTo(clamped);
+    HapticFeedback.selectionClick();
+    setState(() => _seekHint = forward ? '\u00bb 10s' : '10s \u00ab');
+    Future.delayed(const Duration(milliseconds: 650), () {
+      if (mounted) setState(() => _seekHint = null);
+    });
   }
 
   String _format(Duration d) {

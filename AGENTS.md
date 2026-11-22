@@ -114,3 +114,41 @@ Security scrubs applied to `dist/site` and the cpanel package (do not reintroduc
 - no DB credentials or deploy keys in the Bangla guides or `VERIFICATION-REPORT.txt`.
 
 Packaging now also excludes `bootstrap/cache/*.php` (absolute paths from the build machine) and `database/database.sqlite`.
+
+## Google sign-in: browser fallback (v1.2)
+- `backend/app/Services/GoogleSignInService.php` — shared verify+provision used by API and web.
+- `backend/app/Http/Controllers/Web/GoogleAuthController.php` — `/auth/google/redirect` + `/auth/google/callback` (state in cache, 10 min, one-time; code exchange with Web client + secret; returns `com.nexdicodelab.ittube://oauth?token=…`).
+- App: `lib/services/google_browser_auth.dart` (app_links + url_launcher), login screen falls back automatically on native failure, `AuthProvider.loginWithToken`.
+- cPanel patch bundle: `dist/google-login-patch/` → `ittube-google-patch.zip` (6 files).
+
+## v1.2.0 premium update
+- Auth is Google-only in the app (email/password + register screens removed).
+- Home rebuilt: greeting header, hero card, `ContinueWatchingRow` (history API).
+- Player: double-tap seek ±10s with haptic feedback.
+- Release signing moved to `android/ittube-release.jks` + `android/key.properties`
+  (gitignored). SHA-1 `7A:1C:32:FB:3B:41:2F:10:19:2A:E4:59:7F:0F:DD:8D:C7:C1:E0:BB`.
+  Old APKs used the debug key, so upgrades need an uninstall first.
+- Local docroot for the download site: `dist/site` served on port 12000.
+
+## v1.3.0 YouTube-style layout
+- `screens/home/home_screen.dart`: logo header (bell badge + search) + 5 scrollable tabs
+  (Home/Subs/Music/Live/More) with `HomeFeedTab` (shorts shelf + paginated feed).
+- `screens/home/home_tabs.dart`: SubsTab, MusicTab (admin "Music" category), LiveTab
+  (respects `live_stream_enabled`), MoreTab.
+- `widgets/feed_widgets.dart`: FeedVideoCard, ShortsCard, ShortsRow, LiveCard, FeedSkeletonList.
+- `screens/shell/main_shell.dart`: bottom nav Home/Shorts/Create/Subs/You + create sheet
+  (channel guard), `screens/profile/you_tab.dart` for the You tab.
+- Theme gained violet accents (`AppColors.violet`, `AppGradients.violetBrand`).
+- `LiveStream` model + `ApiService.liveStreams()`; `UploadScreen(initialType:)`.
+
+## v1.3.1 playback fixes
+- Player: first-frame gate before `play()`, `_showPoster` overlay, buffering spinner,
+  Retry button, throttled rebuilds (500ms), controls auto-hide, wakelock while playing.
+- Lifecycle: `WidgetsBindingObserver` + `RouteAware` (`core/route_observer.dart`,
+  registered in `main.dart`) pause/resume on background and route push.
+- Progress saved every 10s and on dispose via `recordView(position, completed)`.
+- Autoplay next from `_related`; `VideoPlayerScreen(startAt:)` used by
+  `ContinueWatchingRow` (now on Home).
+- Shorts: lifecycle pause, throttled rebuilds, disposed on tab switch in `main_shell`,
+  share sheet.
+- New deps: `share_plus`, `wakelock_plus`.

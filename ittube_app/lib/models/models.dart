@@ -427,3 +427,55 @@ class UploadLimits {
 
   bool canUploadDirectly(int bytes) => bytes <= maxDirectUploadMb * 1024 * 1024;
 }
+
+
+class LiveChannelRef {
+  final int id;
+  final String name;
+  final String handle;
+  const LiveChannelRef({required this.id, required this.name, required this.handle});
+
+  factory LiveChannelRef.fromJson(Map<String, dynamic> json) => LiveChannelRef(
+        id: _int(json['id']),
+        name: json['name']?.toString() ?? 'IT TUBE',
+        handle: json['handle']?.toString() ?? '',
+      );
+}
+
+class LiveStream {
+  final int id;
+  final String title;
+  final String? description;
+  final String status;
+  final String? thumbnailUrl;
+  final String? scheduledFor;
+  final String? startedAt;
+  final String? gameTitle;
+  final LiveChannelRef? channel;
+
+  const LiveStream({
+    required this.id,
+    required this.title,
+    this.description,
+    this.status = 'scheduled',
+    this.thumbnailUrl,
+    this.scheduledFor,
+    this.startedAt,
+    this.gameTitle,
+    this.channel,
+  });
+
+  bool get isLive => status == 'live';
+
+  factory LiveStream.fromJson(Map<String, dynamic> json) => LiveStream(
+        id: _int(json['id']),
+        title: json['title']?.toString() ?? '',
+        description: json['description']?.toString(),
+        status: json['status']?.toString() ?? 'scheduled',
+        thumbnailUrl: _str(json['thumbnail_url']),
+        scheduledFor: _str(json['scheduled_for']),
+        startedAt: _str(json['started_at']),
+        gameTitle: _str(json['game_title']),
+        channel: json['channel'] is Map<String, dynamic> ? LiveChannelRef.fromJson(json['channel'] as Map<String, dynamic>) : null,
+      );
+}

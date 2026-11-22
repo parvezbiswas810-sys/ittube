@@ -67,7 +67,7 @@
                     <div class="field">
                         <label>Client secret</label>
                         <input type="password" name="google_client_secret" value="" autocomplete="new-password"
-                               placeholder="{{ $state['has_secret'] ? '•••••••• stored — leave blank to keep' : 'Not set (optional for Android ID-token flow)' }}">
+                               placeholder="{{ $state['has_secret'] ? '•••••••• stored — leave blank to keep' : 'Not set — required for browser sign-in fallback' }}">
                         <div class="hint">Encrypted with the app key. It is never returned by the API or shown again after saving.</div>
                     </div>
                     <div class="field">
