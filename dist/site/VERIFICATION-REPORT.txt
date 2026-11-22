@@ -1,0 +1,132 @@
+IT TUBE — Blue Orbit Edition — v1.1 VERIFICATION REPORT
+=======================================================
+Generated: 2026-11-22 (build machine)
+Scope: Laravel backend + admin panel + Flutter Android app (Google OAuth upgrade)
+
+ENVIRONMENT
+-----------
+PHP            8.4.27 (pdo_mysql, mbstring, gd, fileinfo, zip)
+Database       MySQL (live schema, 31 tables)
+Framework      Laravel 12/13
+Flutter        3.50.1 · Dart 3.14.0
+Android SDK    36.0.0 · JDK 21
+Node/Chart.js  bundled locally in the admin panel
+
+BACKEND / ADMIN PANEL — HTTP smoke test (in-process kernel + real HTTP)
+-----------------------------------------------------------------------
+Admin pages (authenticated, admin guard)                          RESULT
+  /admin (dashboard) ............................... 200 OK
+  /admin/users ..................................... 200 OK
+  /admin/users/{id} ................................ 200 OK
+  /admin/channels .................................. 200 OK
+  /admin/channels/{id} ............................. 200 OK
+  /admin/videos .................................... 200 OK
+  /admin/videos/{id} ............................... 200 OK
+  /admin/shorts .................................... 200 OK
+  /admin/categories ................................ 200 OK
+  /admin/comments .................................. 200 OK
+  /admin/reports ................................... 200 OK
+  /admin/notifications ............................. 200 OK
+  /admin/home-page ................................. 200 OK
+  /admin/settings .................................. 200 OK
+  /admin/authentication (new) ...................... 200 OK
+  /admin/copyright (new) ........................... 200 OK
+  /admin/live-streams (new) ........................ 200 OK
+  /admin/platform (new) ............................ 200 OK
+  /admin/roles ..................................... 200 OK
+  /admin/activity-logs ............................. 200 OK
+
+Public API
+  GET  /api/v1/app/config .......................... 200 OK
+  GET  /api/v1/settings/public ..................... 200 OK
+  GET  /api/v1/home ................................ 200 OK
+  GET  /api/v1/videos .............................. 200 OK
+  GET  /api/v1/shorts .............................. 200 OK
+  GET  /api/v1/categories .......................... 200 OK
+  GET  /api/v1/channels ............................ 200 OK
+  GET  /api/v1/search?q=test ....................... 200 OK
+  GET  /api/v1/live-streams ........................ 200 OK
+
+Auth enforcement
+  /auth/me, /history, /notifications,
+  /playlists, /subscriptions (no token) ............ 401 (all five)
+  GET /videos/1/download (no token, real HTTP) ..... 401
+  POST /auth/google (module disabled) .............. 403
+
+Authenticated flows (Sanctum token)
+  GET  /auth/me .................................... 200 OK
+  GET  /channels/mine .............................. 200 OK  (route-shadowing bug fixed)
+  POST /videos/1/like .............................. 200 OK
+  POST /videos/1/comments .......................... 201 OK
+  POST /auth/device-tokens ......................... 201 OK
+  GET  /videos/1/download (allow_download=1) ....... 200 OK  (private disk fixed)
+
+Installer & legal
+  GET /install (already installed) ................. 404 (locked, as designed)
+  GET /terms ....................................... 200 OK
+  GET /privacy ..................................... 200 OK
+
+Automated tests
+  php artisan test ................................. 2 passed / 3 assertions
+
+FLUTTER ANDROID APP
+-------------------
+  flutter pub get .................................. OK (google_sign_in 6.3.0, path_provider 2.1.6 added)
+  flutter analyze .................................. 0 errors, 0 warnings (info-level lints only)
+  flutter build apk --release ...................... OK  → app-release.apk  56.8 MB
+  flutter build appbundle --release ................ OK  → app-release.aab  57.3 MB
+  Package name ..................................... com.nexdicodelab.ittube
+  Version .......................................... 1.0.0 (versionCode 1)
+  minSdk / targetSdk ............................... 24 / 36
+  Signing .......................................... Android debug key
+  Debug certificate SHA-1 .......................... E2:15:53:D3:9C:DC:CE:BC:C5:B5:D7:B0:81:E8:97:76:E4:EC:9A:D1
+
+  Assets: assets/logo.png and assets/logo-512.png are now declared in
+  pubspec.yaml — the logo renders in the splash, login and home header.
+
+WHAT WAS ADDED IN v1.1
+----------------------
+Backend
+  • Google ID-token verification (JWKS, aud, iss, exp, email_verified) + account linking
+  • Guest browsing middleware with an admin switch
+  • Device/push token registry (Firebase-ready)
+  • Per-video download permission + token-protected streaming download
+  • Live streams (create/start/end, ingest credentials) + polling live chat
+  • Copyright/DMCA claim API and admin review queue
+  • Platform module: downloads, live, ad placements, monetization profiles
+  • New permissions: auth.manage, copyright.manage, live.manage, platform.manage
+  • Route fixes: channels/mine shadowing, numeric constraints on /videos/{id},
+    /shorts/{id}, /live-streams/{id}, download auth
+
+Android
+  • Google sign-in button (appears when enabled by the admin)
+  • Guest browsing ("Browse as guest") when guest mode is on
+  • Sign-in gate sheet for like, subscribe, comment, upload, download
+  • Channel creation wizard; upload blocked until a channel exists
+  • Download button for allowed videos + Downloads screen with offline player
+  • Config-driven feature flags (downloads, live, guest mode, Google client ID)
+
+KNOWN LIMITATIONS (verified, not hidden)
+-----------------------------------------
+  • Google sign-in needs a real Android OAuth client (package + SHA-1 above) and a
+    Web client ID configured in Admin → Authentication. Without them Google returns
+    error 10/12500; the app shows a readable message. Not end-to-end testable here.
+  • Live viewing/chat UI is not part of the Android app in this build; the API and
+    admin moderation are complete and tested.
+  • FFmpeg is not installed on the build machine, so automatic thumbnails/duration
+    probing/HLS conversion were not exercised. Uploads still succeed; the admin panel
+    reports FFmpeg availability instead of pretending.
+  • Downloads are saved to the app's private documents folder (no storage chooser).
+  • pdo_sqlite is missing in this environment, so the PHPUnit suite covers only
+    DB-independent tests; API behaviour was verified against the live MySQL schema.
+  • Release builds use the Android debug key. Create a keystore and update
+    android/key.properties before publishing to Play Store.
+
+FILES IN THIS PACKAGE
+---------------------
+  app-release.apk            56.8 MB   installable Android build
+  app-release.aab            57.3 MB   Play Store bundle
+  ittube-backend.zip         19 MB     Laravel + admin panel (no .env inside)
+  ittube-cpanel.zip          19 MB     backend + public_html_files + Bangla guides
+  ittube-android-source.zip  372 KB    Flutter project (116 files)
+  docs/API.md                          full API reference

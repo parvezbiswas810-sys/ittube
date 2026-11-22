@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IT TUBE — Download Center</title>
+<link rel="icon" href="assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#0866F5;--bright:#1677FF;--navy:#071B68;--orbit:#0A1260;--cyan:#00C7F2;--sky:#74C9FF;--light:#EAF5FF;--ice:#F4F9FF;--muted:#64748B;--border:#E3EAF5;--text:#14213D}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,'Noto Sans Bengali',system-ui,sans-serif;background:var(--ice);color:var(--text)}
+.hero{position:relative;overflow:hidden;background:linear-gradient(140deg,var(--orbit),var(--navy) 45%,var(--primary));color:#fff;padding:64px 24px 72px;text-align:center}
+.hero::before,.hero::after{content:'';position:absolute;border-radius:50%;border:1px solid rgba(116,201,255,.25)}
+.hero::before{width:520px;height:520px;right:-160px;top:-200px}
+.hero::after{width:680px;height:680px;left:-240px;bottom:-420px;border-color:rgba(0,199,242,.18)}
+.hero img{width:96px;height:96px;border-radius:26px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.hero h1{font-size:40px;margin:20px 0 6px;letter-spacing:-1px;font-weight:900}
+.hero .tag{font-size:11px;letter-spacing:5px;font-weight:700;color:rgba(255,255,255,.65)}
+.hero p{max-width:620px;margin:16px auto 0;color:rgba(255,255,255,.78);font-size:14.5px;line-height:1.7}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+.chip{padding:6px 13px;border-radius:99px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);font-size:11.5px;font-weight:600;letter-spacing:.02em}
+.wrap{max-width:1120px;margin:-42px auto 0;padding:0 20px 70px;position:relative;z-index:2}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:26px;box-shadow:0 18px 50px rgba(7,27,104,.08);display:flex;flex-direction:column}
+.card.featured{border:2px solid #0866F5;box-shadow:0 22px 60px rgba(8,102,245,.18)}
+.card .ico{width:48px;height:48px;border-radius:14px;background:var(--light);display:grid;place-items:center;font-size:22px;margin-bottom:16px}
+.card h2{font-size:19px;margin:0 0 6px;color:var(--navy)}
+.card .meta{font-size:12px;color:var(--muted);margin-bottom:14px}
+.card ul{margin:0 0 20px;padding-left:18px;color:var(--muted);font-size:12.8px;line-height:1.9}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto;background:linear-gradient(135deg,var(--primary),var(--bright));color:#fff;text-decoration:none;padding:14px;border-radius:13px;font-weight:800;font-size:13.5px;box-shadow:0 10px 24px rgba(8,102,245,.28)}
+.btn.ghost{background:#fff;color:var(--primary);border:1px solid var(--border);box-shadow:none;margin-top:10px}
+.btn:hover{transform:translateY(-1px)}
+.section{margin-top:44px}
+.section h3{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#8494B0;margin:0 0 14px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.step{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px}
+.step b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:9px;background:var(--light);color:var(--primary);font-size:12px;margin-bottom:10px}
+.step h4{margin:0 0 6px;font-size:13.5px;color:var(--navy)}
+.step p{margin:0;font-size:12.3px;color:var(--muted);line-height:1.7}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;font-size:12.8px}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid #EEF3FA}
+th{background:var(--ice);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#8494B0}
+td code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--primary)}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;padding:30px 20px 50px}
+.foot b{color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <img src="assets/logo.png" alt="IT TUBE">
+  <div class="tag" style="margin-top:18px">NEXDI CODE LAB PRESENTS</div>
+  <h1>IT TUBE</h1>
+  <div class="tag">PREMIUM VIDEO STREAMING · BLUE ORBIT EDITION</div>
+  <p>Download the Android app, the Laravel backend with the Blue Orbit admin panel, and the full source code. One API, one MySQL database, one design system.</p>
+  <div class="chips"><span class="chip">Android App</span><span class="chip">Laravel API</span><span class="chip">Admin Panel</span><span class="chip">Google Sign-In</span><span class="chip">Live &amp; Chat</span><span class="chip">Downloads</span><span class="chip">cPanel Ready</span><span class="chip">Installer Included</span></div>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="card featured">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0866F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg></div>
+      <h2>cPanel One-Click Package</h2>
+      <div class="meta">ittube-cpanel.zip · 19 MB · installer included</div>
+      <ul>
+        <li>No credentials inside the zip — enter DB details in <b>/install</b></li>
+        <li>Upload → copy public files → open <b>/install</b></li>
+        <li>Migrations + seeders + Super Admin in one click</li>
+        <li>Installer locks itself after setup</li>
+      </ul>
+      <a class="btn" href="ittube-cpanel.zip" download>⬇ Download cPanel Package</a>
+      <a class="btn ghost" href="ITTUBE-FULL-GUIDE-BANGLA.txt" download>সম্পূর্ণ ইনস্টল গাইড (বাংলা)</a>
+      <a class="btn ghost" href="VERIFICATION-REPORT.txt" download>টেস্ট রিপোর্ট</a>
+    </div>
+    <div class="card">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0866F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
+      <h2>IT TUBE Android App</h2>
+      <div class="meta" id="apk-meta">Release APK · com.nexdicodelab.ittube · 55 MB</div>
+      <ul>
+        <li>Flutter release build (debug key) &amp; installable</li>
+        <li>Google sign-in, guest browsing, offline downloads</li>
+        <li>Channel creation, resumable uploads, player, comments, playlists</li>
+        <li>Connected to <b>api.adsxuit.com/api/v1</b></li>
+      </ul>
+      <a class="btn" href="app-release.apk" download>⬇ Download APK</a>
+      <a class="btn ghost" href="app-release.aab" download>Download AAB (Play Store)</a>
+    </div>
+
+    <div class="card">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0866F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><path d="M6 6.5h.01M6 17.5h.01"/></svg></div>
+      <h2>Laravel Backend + Admin</h2>
+      <div class="meta">ittube-backend.zip · ~19 MB · PHP 8.2+</div>
+      <ul>
+        <li>Full API v1 + Blue Orbit admin panel</li>
+        <li>29 MySQL tables, seeders, roles &amp; permissions</li>
+        <li><b>/install</b> wizard: DB + Super Admin in one step</li>
+        <li>cPanel guide (English) + ইনস্টল গাইড (বাংলা)</li>
+      </ul>
+      <a class="btn" href="ittube-backend.zip" download>⬇ Download Backend</a>
+      <a class="btn ghost" href="INSTALL-BANGLA.txt" download>Install Guide (Bangla)</a>
+    </div>
+
+    <div class="card">
+      <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0866F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+      <h2>Android Studio Source</h2>
+      <div class="meta">ittube-android-source.zip · Flutter 3.50 · 116 files</div>
+      <ul>
+        <li>Complete Flutter project (Android platform)</li>
+        <li>Open in Android Studio → run / build</li>
+        <li>API URL configurable via --dart-define</li>
+        <li>README with build &amp; signing instructions</li>
+      </ul>
+      <a class="btn" href="ittube-android-source.zip" download>⬇ Download Source</a>
+      <a class="btn ghost" href="docs/API.md" download>API Reference (Markdown)</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>What's new in this build</h3>
+    <div class="grid">
+      <div class="card">
+        <h2>Google sign-in &amp; guest mode</h2>
+        <ul>
+          <li>Google ID token verified server-side (JWKS, audience, issuer, expiry)</li>
+          <li>Client ID and on/off switch live in <b>Admin → Authentication</b></li>
+          <li>Optional guest browsing — turn it off to force sign-in</li>
+          <li>Accounts link by Google ID or verified email</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Downloads, copyright &amp; live</h2>
+        <ul>
+          <li>Per-video download permission + platform switch, token-protected streaming</li>
+          <li>DMCA / copyright claim form with admin review queue</li>
+          <li>Live streams with ingest credentials, HLS URL and polling live chat</li>
+          <li>Device/push token registry, ad placements and monetization profiles</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Large video uploads</h2>
+        <ul>
+          <li>Resumable chunked upload (1.6 MB chunks) — big files no longer fail with "Post data is too large"</li>
+          <li>Upload limits endpoint: <code>/api/v1/videos/upload/limits</code></li>
+          <li>Clear 413 / 422 messages in the app</li>
+          <li>512 MB PHP limits pre-set in <code>.user.ini</code> + <code>.htaccess</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Reliability fixes</h2>
+        <ul>
+          <li>Like / dislike counters can no longer underflow (fixed a 500 on toggle)</li>
+          <li>Unsubscribe, comment delete, playlist remove use the same safe counters</li>
+          <li>Admin settings no longer switch off features from other groups</li>
+          <li>Full API regression suite: 26 checks passing</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>cPanel installation in 4 steps</h3>
+    <div class="steps">
+      <div class="step"><b>1</b><h4>Create the database</h4><p>cPanel → MySQL Databases → create DB + user, grant ALL PRIVILEGES.</p></div>
+      <div class="step"><b>2</b><h4>Upload &amp; extract</h4><p>Upload <code>ittube-backend.zip</code> to <code>/home/USER/</code> and extract. Copy <code>public_html_files/*</code> into <code>public_html/</code>.</p></div>
+      <div class="step"><b>3</b><h4>Run /install</h4><p>Open <code>https://api.adsxuit.com/install</code>, enter DB + admin details, click Install. The wizard writes <code>.env</code> with a fresh app key.</p></div>
+      <div class="step"><b>4</b><h4>Go live</h4><p>Admin: <code>/admin</code> · API: <code>/api/v1/app/config</code>. The installer locks itself automatically.</p></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Project endpoints</h3>
+    <table>
+      <tr><th>Purpose</th><th>URL</th></tr>
+      <tr><td>Admin panel</td><td><code>https://api.adsxuit.com/admin</code></td></tr>
+      <tr><td>API base</td><td><code>https://api.adsxuit.com/api/v1</code></td></tr>
+      <tr><td>Installer</td><td><code>https://api.adsxuit.com/install</code></td></tr>
+      <tr><td>App config</td><td><code>https://api.adsxuit.com/api/v1/app/config</code></td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>What is inside the backend</h3>
+    <table>
+      <tr><th>Module</th><th>Details</th></tr>
+      <tr><td>Auth</td><td>Sanctum tokens, register/login, reset, email verification, delete account, rate limits</td></tr>
+      <tr><td>Content</td><td>Videos, shorts, categories, tags, uploads with FFmpeg metadata &amp; thumbnails</td></tr>
+      <tr><td>Social</td><td>Channels, subscriptions, comments + replies, likes/dislikes, playlists, history</td></tr>
+      <tr><td>Moderation</td><td>Reports, comment removal, user suspension/ban, video approval queue</td></tr>
+      <tr><td>Admin</td><td>Dashboard KPIs &amp; charts, users, channels, videos, shorts, categories, comments, reports, notifications, home sections, settings, roles, audit logs</td></tr>
+      <tr><td>Upgrade modules</td><td>Google sign-in &amp; guest mode, downloads, live streams + chat, copyright/DMCA queue, ad placements, monetization</td></tr>
+      <tr><td>Deployment</td><td>Web installer, `.htaccess` hardening, private video streaming, cPanel + Bangla guides</td></tr>
+    </table>
+  </div>
+</div>
+<div class="foot">IT TUBE · Blue Orbit Edition · built by <b>Nexdi Code Lab</b><br>Files are served from this preview host — move them to your own server for production.</div>
+</body>
+</html>

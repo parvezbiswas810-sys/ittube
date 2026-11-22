@@ -1,0 +1,465 @@
+=====================================================================
+ IT TUBE — সম্পূর্ণ ইনস্টল গাইড (cPanel shared hosting)
+ Laravel API + Web Admin Panel — Blue Orbit Edition
+ Nexdi Code Lab Presents
+=====================================================================
+
+সূচি
+ ০. প্যাকেজে কী আছে
+ ১. যা যা লাগবে
+ ২. ধাপ ১ — ডাটাবেস
+ ৩. ধাপ ২ — ফাইল আপলোড
+ ৪. ধাপ ৩ — ফাইল বসানো (ফোল্ডার স্ট্রাকচার)
+ ৫. ধাপ ৪ — পারমিশন
+ ৬. ধাপ ৫ — ইনস্টল (৩টি পদ্ধতি)
+ ৭. ধাপ ৬ — যাচাই (চেকলিস্ট)
+ ৮. ধাপ ৭ — SSL চালু
+ ৯. ধাপ ৮ — PHP সেটিংস
+১০. ধাপ ৯ — Admin প্যানেল সেটআপ
+১১. ধাপ ১০ — Android App কনেক্ট
+১২. আপডেট করার নিয়ম
+১৩. সমস্যা ও সমাধান
+১৪. নিরাপত্তা
+১৫. ব্যাকআপ
+
+
+=====================================================================
+০. প্যাকেজে কী আছে (যাচাই করা)
+=====================================================================
+ittube-cpanel.zip (18 MB) — সম্পূর্ণ Laravel অ্যাপ্লিকেশন:
+
+  ittube_backend/            Laravel 12 সম্পূর্ণ সোর্স
+     app/                    79 ফাইল
+        Http/Controllers/    32 কন্ট্রোলার (API V1 + Admin + Installer + Media)
+        Models/              25 মডেল
+        Services/            5 সার্ভিস (Upload, Video, Setting, Notification, Moderation)
+        Console/Commands/    ittube:create-admin
+     database/migrations/    22 ফাইল = 37 টেবিল
+     database/seeders/       রোল, পারমিশন, ক্যাটাগরি, সেটিংস
+     resources/views/        28 Blade ভিউ (পুরো Admin Panel UI)
+     routes/                 web.php (admin), api.php (REST API), console.php
+     vendor/                 9,002 ফাইল — composer লাগবে না
+     .env                    আপনার DB details আগেই বসানো
+
+  public_html_files/         ডোমেইন ফোল্ডারে কপি করার ফাইল
+     index.php               front controller (backend path অটো-ডিটেক্ট)
+     .htaccess               rewrite + Authorization header
+     assets/                 admin.css, app.js, লোগো (12 ফাইল)
+     install              ওয়ান-ক্লিক ইনস্টলার (self-lock)
+     favicon.png, robots.txt
+
+  deploy.sh                  Terminal/SSH ইনস্টলার
+  README-BANGLA.txt          সংক্ষিপ্ত গাইড
+  ITTUBE-FULL-GUIDE-BANGLA.txt  এই ফাইল
+
+
+=====================================================================
+১. যা যা লাগবে
+=====================================================================
+  - cPanel access (File Manager + MySQL Databases + PHP Selector)
+  - PHP 8.2+ (8.4 সবচেয়ে ভালো)
+  - PHP extension: pdo_mysql, mbstring, openssl, fileinfo, gd, zip,
+    curl, bcmath, ctype, json, tokenizer, xml
+  - MySQL/MariaDB ডাটাবেস (আপনার: YOUR_DB_NAME)
+  - ডোমেইন: api.adsxuit.com (ফোল্ডার ইতিমধ্যেই আছে)
+  - আপলোড লিমিট 512M
+
+  লাগবে না: composer, npm, node, docker, SSH (ঐচ্ছিক)
+
+
+=====================================================================
+২. ধাপ ১ — ডাটাবেস
+=====================================================================
+.env তে আগেই সেট করা আছে:
+  DB_DATABASE = YOUR_DB_NAME
+  DB_USERNAME = YOUR_DB_NAME
+  DB_PASSWORD = YOUR_DB_NAME
+  DB_HOST     = localhost
+
+ডাটাবেস না থাকলে:
+  cPanel > MySQL Databases
+   1) Create New Database: order        (ফুল নাম: YOUR_DB_NAME)
+   2) Create New User: order / pass: YOUR_DB_NAME
+   3) Add User To Database > ALL PRIVILEGES > Make Changes
+
+পাসওয়ার্ড আলাদা হলে ittube_backend/.env এর DB_PASSWORD বদলান।
+
+
+=====================================================================
+৩. ধাপ ২ — ফাইল আপলোড
+=====================================================================
+  cPanel > File Manager > /home/adsxuitc/
+  > Upload > ittube-cpanel.zip
+  > ফাইলে right click > Extract
+
+  Extract এর পর:
+     /home/adsxuitc/ittube_backend/
+     /home/adsxuitc/public_html_files/
+     /home/adsxuitc/deploy.sh
+     /home/adsxuitc/README-BANGLA.txt
+     /home/adsxuitc/ITTUBE-FULL-GUIDE-BANGLA.txt
+
+
+=====================================================================
+৪. ধাপ ৩ — ফাইল বসানো (সবচেয়ে গুরুত্বপূর্ণ)
+=====================================================================
+লক্ষ্য স্ট্রাকচার:
+
+  /home/adsxuitc/
+      ittube_backend/          পুরো Laravel (ওয়েব থেকে ঢোকা যায় না)
+      api.adsxuit.com/         ডকুমেন্ট রুট (শুধু পাবলিক ফাইল)
+          index.php
+          .htaccess
+          assets/
+          install
+          favicon.png
+          robots.txt
+
+করণীয়:
+  1) /home/adsxuitc/public_html_files/ এ ঢুকুন
+  2) সব সিলেক্ট করুন (Select All) > Copy
+  3) /home/adsxuitc/api.adsxuit.com/ এ যান > Paste (Overwrite দিন)
+  4) নিশ্চিত করুন ittube_backend ফোল্ডারটি api.adsxuit.com এর ভিতরে
+     নেই — সেটি /home/adsxuitc/ittube_backend এ থাকবে
+
+নোট:
+  - ডকুমেন্ট রুট /home/adsxuitc/public_html/api.adsxuit.com হলেও চলবে;
+    index.php নিজেই ittube_backend খুঁজে নেয় (৬ লেভেল উপরে পর্যন্ত)।
+  - ittube_backend কে public_html এর ভিতরে রাখবেন না।
+
+
+=====================================================================
+৫. ধাপ ৪ — পারমিশন
+=====================================================================
+  File Manager > ittube_backend >
+     storage         > Change Permissions > 755
+     bootstrap/cache > Change Permissions > 755
+  (কিছু হোস্টে 775 লাগে)
+  .env > 644
+
+
+=====================================================================
+৬. ধাপ ৫ — ইনস্টল (যেকোনো একটি পদ্ধতি)
+=====================================================================
+
+পদ্ধতি A — ওয়ান-ক্লিক (SSH লাগে না)
+------------------------------------
+  https://api.adsxuit.com/install
+
+  নিজের admin ইমেইল/পাস চাইলে:
+  https://api.adsxuit.com/install
+
+  স্ক্রিনে ধাপে ধাপে দেখাবে:
+    1) PHP environment
+    2) Files and permissions
+    3) Detecting HTTPS
+    4) Booting Laravel
+    5) Database connection
+    6) Migrations
+    7) Seeders
+    8) Super admin
+    9) Storage link
+   10) Verification  -> tables 37, admin 1, categories 12, settings 28
+
+  শেষে Admin URL + Email + Password দেখাবে, install নিজেই লক হয়ে যাবে।
+  পাসওয়ার্ড সেভ: ittube_backend/storage/app/admin-credentials.txt
+
+  [FAIL] এলে ওই লাইনের নির্দেশনা দেখে ঠিক করুন, পেজ রিলোড দিন।
+  (আধা-সম্পন্ন ইনস্টল রিলোড করলে বাকিটা শেষ হবে।)
+
+
+পদ্ধতি B — cPanel Terminal / SSH
+------------------------------------
+  cd /home/adsxuitc
+  bash deploy.sh /home/adsxuitc/api.adsxuit.com
+
+  নিজের ইমেইল/পাস:
+  ADMIN_EMAIL=you@mail.com ADMIN_PASS=YourPass1234 bash deploy.sh /home/adsxuitc/api.adsxuit.com
+
+
+পদ্ধতি C — ম্যানুয়াল (artisan)
+------------------------------------
+  cd /home/adsxuitc/ittube_backend
+  php artisan config:clear
+  php artisan migrate --force
+  php artisan db:seed --force
+  php artisan ittube:create-admin admin@adsxuit.com --name="IT TUBE Admin" --password="YourPass1234"
+  php artisan storage:link
+
+
+=====================================================================
+৭. ধাপ ৬ — যাচাই (চেকলিস্ট)
+=====================================================================
+  [ ] https://api.adsxuit.com/api/v1/app/config
+      -> {"success":true, ... "app_name":"IT TUBE" ...}
+  [ ] https://api.adsxuit.com/api/v1/categories   -> 12টি ক্যাটাগরি
+  [ ] https://api.adsxuit.com/api/v1/videos       -> success:true
+  [ ] https://api.adsxuit.com/admin/login         -> Blue Orbit লগইন পেজ
+  [ ] লগইনের পর ড্যাশবোর্ডে KPI কার্ড + চার্ট
+  [ ] https://api.adsxuit.com/install             -> 404 (লক, এটাই সঠিক)
+  [ ] https://api.adsxuit.com/install          -> 404 (লক হয়েছে)
+
+  Admin এর ১৪টি পেজ: Dashboard, Users, Channels, Videos, Shorts,
+  Categories, Comments, Reports, Notifications, Home Page,
+  App Settings, Admin Roles, Activity Logs, My Account
+
+
+=====================================================================
+৮. ধাপ ৭ — SSL
+=====================================================================
+  cPanel > SSL/TLS Status > api.adsxuit.com > Run AutoSSL
+  এরপর .env এ:
+     FORCE_HTTPS=true
+     SESSION_SECURE_COOKIE=true
+
+
+=====================================================================
+৯. ধাপ ৮ — PHP সেটিংস
+=====================================================================
+  cPanel > MultiPHP INI Editor > api.adsxuit.com:
+     upload_max_filesize = 512M
+     post_max_size       = 512M
+     max_execution_time  = 300
+     memory_limit        = 512M
+
+  cPanel > Select PHP Version > Extensions:
+     pdo_mysql, mbstring, fileinfo, gd, zip, curl, bcmath, intl, exif
+     PHP version 8.2+
+
+  FFmpeg (ঐচ্ছিক): না থাকলেও আপলোড কাজ করবে, শুধু অটো-থাম্বনেইল/
+  ডিউরেশন তৈরি হবে না — ইউজার নিজে থাম্বনেইল দিতে পারবে।
+
+
+=====================================================================
+১০. ধাপ ৯ — Admin প্যানেল সেটআপ (ইনস্টলের পরে)
+=====================================================================
+  1) App Settings: app name, description, support email, terms/privacy URL,
+     max upload size, allowed formats, registration, email verification,
+     upload approval, comments, shorts, maintenance mode, app version
+  2) Categories: ক্যাটাগরি যোগ/এডিট/আইকন/অর্ডার
+  3) Home Page: সেকশন চালু/বন্ধ, অর্ডার, ফিচার্ড ভিডিও
+  4) Admin Roles: Moderator / Support অ্যাডমিন
+  5) My Account: পাসওয়ার্ড বদলান
+  6) মডারেশন শুরু করুন (ভিডিও/শর্টস/কমেন্ট/রিপোর্ট)
+
+  Android অ্যাপের হোম, ক্যাটাগরি, ফিচার, সেটিংস — সব এখান থেকেই
+  কন্ট্রোল হয় (অ্যাপে হার্ডকোড নেই)।
+
+
+=====================================================================
+১১. ধাপ ১০ — Android App কানেক্ট
+=====================================================================
+  APK/AAB আগেই বিল্ড করা, API: https://api.adsxuit.com/api/v1
+  ইনস্টলের পর Register/Login করলেই হোম ফিড API থেকে আসবে।
+
+  নিজে বিল্ড:
+     flutter pub get
+     flutter build apk --release --dart-define=API_BASE_URL=https://api.adsxuit.com/api/v1
+     flutter build appbundle --release --dart-define=API_BASE_URL=https://api.adsxuit.com/api/v1
+
+  Play Store এ দিতে নিজের keystore দিয়ে সাইন করতে হবে।
+
+
+=====================================================================
+১২. আপডেট করার নিয়ম
+=====================================================================
+  1) ittube_backend + .env + storage/app/public ব্যাকআপ
+  2) নতুন ittube_backend আপলোড করে overwrite (vendor সহ)
+  3) .env ফিরিয়ে দিন
+  4) php artisan migrate --force
+  5) install আবার দিলে শুধু মাইগ্রেশন+ভেরিফাই চালাবে (ডাটা মুছবে না)
+
+
+=====================================================================
+১৩. সমস্যা ও সমাধান
+=====================================================================
+  500 / সাদা পেজ            -> storage/logs/laravel.log দেখুন;
+                               .env এ APP_DEBUG=true করে দেখুন
+  403 Forbidden              -> index.php + .htaccess আছে? পারমিশন 644/755
+  could not find driver      -> Select PHP Version > pdo_mysql চালু
+  Access denied for user     -> .env এর DB তথ্য; ইউজারকে ALL PRIVILEGES
+  ittube_backend not found   -> backend ফোল্ডার ডকুমেন্ট রুটের উপরে রাখুন
+  CSS/ডিজাইন ভাঙা            -> assets/admin.css আছে? APP_URL ঠিক?
+  419 Page Expired           -> কুকি ক্লিয়ার; SSL ও cookie সেটিং মিলান
+  আপলোডে 413/500             -> upload_max_filesize ও post_max_size 512M
+  ভিডিও চলে না               -> /media/videos/{id}/stream টেস্ট; storage 755
+  ইমেইল আসে না               -> cPanel Email Accounts + .env MAIL_* সেট
+  ড্যাশবোর্ডে ০                -> ডাটা নেই, স্বাভাবিক; কনটেন্ট যোগ করুন
+
+
+=====================================================================
+১৪. নিরাপত্তা
+=====================================================================
+  - ইনস্টলের পর install লক (নিজেই হয়)
+  - deploy.sh ও README পাবলিক ফোল্ডারে রাখবেন না
+  - .env কখনো পাবলিক ফোল্ডারে নয়
+  - Admin পাসওয়ার্ড ইনস্টলের পরই বদলান
+  - cPanel API টোকেন চ্যাটে শেয়ার হয়েছিল — Manage API Tokens >
+    revoke করে নতুন টোকেন নিন
+  - SSL চালু রাখুন, FORCE_HTTPS=true
+
+
+=====================================================================
+১৫. ব্যাকআপ
+=====================================================================
+  ডাটাবেস: cPanel > phpMyAdmin > YOUR_DB_NAME > Export (SQL)
+           অথবা Backup Wizard > Partial Backup
+  ফাইল  : File Manager > ittube_backend + api.adsxuit.com > Compress > Download
+  সপ্তাহে অন্তত একবার।
+
+=====================================================================
+১৬. install এ 404 "Not Found" এলে
+=====================================================================
+ ৪০৪ তিন ধরনের হতে পারে — দেখেই বোঝা যায়:
+
+ ক) প্লেইন লেখা "Not Found" (কোনো ডিজাইন নেই)
+    কারণ: deploy key মেলেনি (কপি আধা হয়েছে / স্পেস ঢুকেছে)।
+    সমাধান: নিচের লিংকটা পুরো কপি করে ব্রাউজারে পেস্ট করুন
+      https://api.adsxuit.com/install
+    (key: YOUR_DEPLOY_KEY)
+
+ খ) cPanel/Apache এর 404 পেজ (লোগো/ডিজাইনসহ)
+    কারণ: install ফাইলটি ডোমেইনের আসল ডকুমেন্ট রুটে নেই।
+    সমাধান:
+      1) check.php আপলোড করে https://api.adsxuit.com/check.php খুলুন
+         -> "docroot (server)" লাইনে আসল ফোল্ডার দেখাবে
+      2) public_html_files/ এর সব ফাইল ওই ফোল্ডারে কপি করুন
+      3) install সেখানে আছে কিনা File Manager এ দেখুন
+
+ গ) Laravel এর 404 (ডিজাইন করা পেজ) বা install আগেই কাজ শেষ করেছে
+    কারণ: ইনস্টল সম্পন্ন হলে install নিজেই ডিলিট হয়ে যায়।
+    সমাধান: সরাসরি https://api.adsxuit.com/admin/login খুলুন —
+      লগইন পেজ এলে ইনস্টল হয়ে গেছে, আর কিছু করার দরকার নেই।
+
+ ডায়াগনস্টিক স্ক্রিপ্ট:
+   check.php (প্যাকেজের public_html_files এ আছে) ডকুমেন্ট রুটে আপলোড করে
+   https://api.adsxuit.com/check.php খুলুন। এটি দেখাবে:
+     - আসল ডকুমেন্ট রুট, ফোল্ডারের ফাইল লিস্ট
+     - ittube_backend পাওয়া গেছে কিনা
+     - .env / storage পারমিশন
+     - DB কানেক্ট হচ্ছে কিনা, টেবিল ৩৭টি কিনা, admin/users/videos কতটি
+     - ইনস্টল হয়েছে কিনা (installed.lock)
+   শেষে "WHAT TO DO" অংশে ঠিক কী করতে হবে লেখা থাকবে।
+   কাজ শেষে check.php ডিলিট করে দিন।
+
+=====================================================================
+১৭. আপলোড এরর: "Post data is too large" / 413 / Validation error
+=====================================================================
+ নতুন ভার্সনে বড় ভিডিও আর ফেল হবে না — অ্যাপ নিজেই টুকরো টুকরো
+ (chunk) আপলোড করে। তবু সমস্যা এলে নিচের ক্রমে দেখুন:
+
+ ১) PHP লিমিট (সবচেয়ে সাধারণ কারণ)
+    cPanel > MultiPHP INI Editor > Editor Mode > ডোমেইন সিলেক্ট করুন
+    এই ৪টি লাইন বসিয়ে Save করুন:
+        upload_max_filesize = 512M
+        post_max_size = 512M
+        memory_limit = 512M
+        max_execution_time = 300
+    প্যাকেজে দেওয়া .user.ini ফাইলটাও এগুলো সেট করে; কিছু হোস্ট
+    .user.ini পড়ে না, তাই MultiPHP INI Editor ই সবচেয়ে নিশ্চিত।
+
+ ২) লিমিট আসলে কী সেট হয়েছে দেখার সহজ উপায়
+    ব্রাউজারে খুলুন: https://api.adsxuit.com/check.php
+    "upload_max_filesize / post_max_size" লাইন দেখুন।
+    অথবা API: GET https://api.adsxuit.com/api/v1/videos/upload/limits
+    (লগইন টোকেনসহ) -> max_direct_upload_mb, chunk_size দেখাবে।
+
+ ৩) Admin Panel এর সেটিং
+    Admin > App Settings > Uploads:
+      - Video uploads: চালু
+      - Max upload size (MB): যেমন 512
+      - Allowed formats: mp4,mov,mkv,webm
+    এখানে দেওয়া সাইজের চেয়ে বড় ফাইল 422 এরর দেবে (এটা ইচ্ছাকৃত)।
+
+ ৪) এরর মেসেজের অর্থ
+    413 "The uploaded file is too large for this server (PHP ...)"
+        = সার্ভারের PHP লিমিট ছোট; ধাপ ১ করুন। অ্যাপ নিজেই chunk
+          মোডে ট্রাই করবে, তাই সাধারণত এতে আটকাবে না।
+    422 "Unsupported video format: xxx"
+        = ফাইল এক্সটেনশন allowed list এ নেই; Admin সেটিং ঠিক করুন।
+    422 "This file is ... MB but the limit is ... MB"
+        = Admin এ max upload size বাড়ান।
+    422 "The title field is required" / "The title must be at least 3 characters"
+        = ফর্মে টাইটেল ঠিকভাবে দিন।
+    401 "Unauthenticated"
+        = লগইন সেশন শেষ; আবার লগইন করুন।
+    419 (admin panel এ) = পেজ পুরনো, রিফ্রেশ করে আবার সাবমিট করুন।
+
+ ৫) চাঙ্ক আপলোড নিজে পরীক্ষা করা (SSH/টার্মিনাল থাকলে)
+    GET  /api/v1/videos/upload/limits
+    POST /api/v1/videos/chunk/init      (filename, size, total_chunks, title)
+    POST /api/v1/videos/chunk/{id}      (index, chunk)  -- প্রতিটি টুকরো
+    GET  /api/v1/videos/chunk/{id}      -- কতগুলো টুকরো পৌঁছেছে
+    POST /api/v1/videos/chunk/{id}/complete  (thumbnail optional)
+    DELETE /api/v1/videos/chunk/{id}    -- বাতিল
+
+ ৬) চাঙ্ক ফাইল জমে থাকলে
+    storage/app/private/chunks/ ও storage/app/private/tmp/ ফোল্ডার
+    নিরাপদে খালি করা যায় (চলমান আপলোড থাকলে করবেন না)।
+
+=====================================================================
+১৮. APK ইনস্টল ও Play Store এ দেওয়া
+=====================================================================
+ ১) APK ইনস্টল
+    app-release.apk ফোনে কপি করুন -> ফাইল ম্যানেজার থেকে ট্যাপ ->
+    "Install unknown apps" অনুমতি দিন -> Install।
+    (এই APK টি ডেভেলপার কী দিয়ে সাইন করা — টেস্টিং ও সরাসরি
+     বিতরণের জন্য ঠিক আছে।)
+
+ ২) Play Store এ দেওয়ার আগে নিজের keystore বানান (একবারই, হারাবেন না)
+    keytool -genkey -v -keystore ittube-upload.jks -keyalg RSA \
+            -keysize 2048 -validity 10000 -alias ittube
+    তারপর android/key.properties ফাইল বানান:
+        storePassword=আপনার_পাসওয়ার্ড
+        keyPassword=আপনার_পাসওয়ার্ড
+        keyAlias=ittube
+        storeFile=/full/path/ittube-upload.jks
+    এরপর:
+        flutter build appbundle --release \
+          --dart-define=API_BASE_URL=https://api.adsxuit.com/api/v1
+    -> build/app/outputs/bundle/release/app-release.aab আপলোড করুন।
+
+ ৩) keystore ও key.properties কোথাও পাবলিক করবেন না
+    (git/zip/হোস্টিং — কোথাও না)। হারালে অ্যাপ আপডেট দেওয়া যাবে না।
+
+ ৪) অ্যাপের API ঠিকানা বদলাতে চাইলে
+    flutter build apk --release --dart-define=API_BASE_URL=https://আপনার-ডোমেইন/api/v1
+
+=====================================================================
+=====================================================================
+ কোনো ধাপে আটকালে install/check.php স্ক্রিনের লেখা বা
+ storage/logs/laravel.log এর শেষ ২০ লাইন পাঠান।
+=====================================================================
+
+===========================================================================
+নতুন (v1.1) — Google লগইন, ডাউনলোড, কপিরাইট, লাইভ, প্ল্যাটফর্ম
+===========================================================================
+১) Google লগইন চালু করা
+   - Google Cloud Console → Credentials → Android OAuth client
+       package name : com.nexdicodelab.ittube
+       SHA-1        : আপনার keystore এর SHA-1
+                      (এই বিল্ডের ডিবাগ SHA-1: E2:15:53:D3:9C:DC:CE:BC:C5:B5:D7:B0:81:E8:97:76:E4:EC:9A:D1)
+   - একটি Web OAuth client তৈরি করে Client ID কপি করুন
+   - Admin → Authentication → Client ID বসান → Google sign-in চালু → Test চাপুন
+   - অ্যাপের লগইন স্ক্রিনে "Continue with Google" বাটন দেখা যাবে
+   - Guest browsing বন্ধ করলে সব স্ক্রিনে লগইন বাধ্যতামূলক হবে
+
+২) ভিডিও ডাউনলোড
+   - Admin → Platform → Downloads চালু করুন
+   - প্রতিটি ভিডিও এডিট করে "Allow download" টিক দিন
+   - অ্যাপে প্লেয়ারের উপরে ডাউনলোড আইকন; Profile → Downloads এ অফলাইন প্লে/ডিলিট
+
+৩) কপিরাইট / DMCA
+   - দাবি জমা: POST /api/v1/copyright/reports
+   - রিভিউ: Admin → Copyright (open → review → resolved/rejected + নোট)
+
+৪) লাইভ স্ট্রিম + লাইভ চ্যাট
+   - Admin → Platform → Live streaming চালু করুন
+   - Admin → Live streams → স্ট্যাটাস/ফিচার্ড/রিমুভ মডারেশন
+   - ক্রিয়েটর: POST /api/v1/live-streams → RTMP ingest credentials → start/end
+   - চ্যাট: GET /api/v1/live-streams/{id}/chat (পোলিং), POST একই URL (৫০০ অক্ষর)
+
+৫) গুরুত্বপূর্ণ নোট
+   - জিপের ভিতরে আর .env নেই — /install উইজার্ড নিজেই .env + APP_KEY তৈরি করে
+   - APK/AAB ডিবাগ কী দিয়ে সাইন করা হয়েছে; Play Store এ দেওয়ার আগে নিজের keystore ব্যবহার করুন
+   - FFmpeg ইনস্টল না থাকলেও আপলোড কাজ করবে (অটো থাম্বনেইল/HLS বন্ধ থাকবে)

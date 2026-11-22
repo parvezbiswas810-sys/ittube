@@ -1,0 +1,43 @@
+IT TUBE — cPanel ইনস্টলেশন (সংক্ষিপ্ত বাংলা গাইড)
+=====================================================
+
+১) cPanel → MySQL Databases
+   - একটি Database তৈরি করুন (যেমন: cpuser_ittube)
+   - একটি User তৈরি করুন (যেমন: cpuser_ittube) + শক্ত পাসওয়ার্ড
+   - User কে Database এ Add করে ALL PRIVILEGES দিন
+
+২) File Manager এ আপলোড
+   - ittube-backend.zip আপলোড করে /home/CPANEL_USER/ এ extract করুন
+   - ফলাফল হবে:
+       /home/CPANEL_USER/ittube_backend/        (Laravel)
+       /home/CPANEL_USER/public_html_files/     (public ফাইল)
+   - public_html_files এর ভিতরের সব ফাইল (index.php, .htaccess, assets/) কপি করে
+     public_html এ পেস্ট করুন (আগের ফাইল থাকলে মুছে দিন)
+
+৩) Permission
+   - ittube_backend/storage  → 755 (recursive)
+   - ittube_backend/bootstrap/cache → 755
+   - .env ফাইল → 644
+
+৪) ইনস্টলার চালান
+   - ব্রাউজারে যান: https://api.adsxuit.com/install
+   - Server requirements সব সবুজ কিনা দেখুন
+   - Application URL: https://api.adsxuit.com
+   - Database host: localhost
+   - Database name / user / password দিন
+   - Super Admin নাম, ইমেইল, পাসওয়ার্ড (কমপক্ষে ১০ অক্ষর) দিন
+   - "Install IT TUBE now" চাপুন
+
+৫) ইনস্টল শেষ হলে
+   - Admin: https://api.adsxuit.com/admin  (আপনার দেওয়া ইমেইল/পাসওয়ার্ড)
+   - API টেস্ট: https://api.adsxuit.com/api/v1/app/config
+   - /install আবার খুললে 404 আসবে (নিরাপত্তার জন্য নিজে থেকেই lock হয়ে যায়)
+
+৬) নিরাপত্তা
+   - install শেষে চাইলে app/Http/Controllers/InstallerController.php এবং
+     routes/web.php থেকে /install রুট মুছে দিন
+   - SSL অবশ্যই চালু রাখুন (cPanel → SSL/TLS Status → Run AutoSSL)
+   - .env কখনো public_html এ রাখবেন না
+
+সমস্যা হলে: ittube_backend/storage/logs/laravel.log দেখুন।
+বিস্তারিত: docs/DEPLOYMENT-CPANEL.md

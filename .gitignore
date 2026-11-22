@@ -1,0 +1,48 @@
+# secrets / local config
+backend/.env
+backend/.env.*.local
+ittube_app/android/key.properties
+*.jks
+*.keystore
+.env
+
+# laravel runtime
+backend/vendor/
+backend/node_modules/
+backend/storage/app/*
+!backend/storage/app/.gitignore
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/database/*.sqlite
+backend/bootstrap/cache/*.php
+backend/public/storage
+
+# flutter / android build output
+ittube_app/build/
+ittube_app/.dart_tool/
+ittube_app/.flutter-plugins
+ittube_app/.flutter-plugins-dependencies
+ittube_app/android/.gradle/
+ittube_app/android/local.properties
+ittube_app/android/app/debug/
+ittube_app/android/app/profile/
+ittube_app/android/app/release/
+ittube_app/ios/Pods/
+ittube_app/*.iml
+ittube_app/.idea/
+
+# release artifacts (published from the download portal, not source)
+dist/*.apk
+dist/*.aab
+dist/*.zip
+dist/ittube-backend/
+dist/cpanel-package/
+dist/site/*.apk
+dist/site/*.aab
+dist/site/*.zip
+
+# tooling
+.agent_tmp/
+.DS_Store
